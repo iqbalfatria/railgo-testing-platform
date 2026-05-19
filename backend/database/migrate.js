@@ -64,6 +64,14 @@ const run = async () => {
 
     console.log('🔗 Connected to database');
 
+    // Acquire advisory lock to prevent concurrent migration runs
+    const [[lockRow]] = await conn.execute("SELECT GET_LOCK('railgo_migrate', 30) AS locked");
+    if (!lockRow.locked) {
+      console.log('⏳ Another migration is already running, waiting timed out. Skipping.');
+      return;
+    }
+    console.log('🔒 Migration lock acquired');
+
     // Create migrations tracking table
     await conn.execute(`
       CREATE TABLE IF NOT EXISTS _migrations (
@@ -116,7 +124,7 @@ const run = async () => {
         }
       }
 
-      await conn.execute('INSERT INTO _migrations (filename) VALUES (?)', [file]);
+      await conn.execute('INSERT IGNORE INTO _migrations (filename) VALUES (?)', [file]);
       console.log(`  ✅ ${file} applied`);
       ranCount++;
     }
@@ -131,7 +139,10 @@ const run = async () => {
     console.error('\n❌ Migration failed:', err.message);
     process.exit(1);
   } finally {
-    if (conn) await conn.end();
+    if (conn) {
+      await conn.execute("SELECT RELEASE_LOCK('railgo_migrate')").catch(() => {});
+      await conn.end();
+    }
   }
 };
 
