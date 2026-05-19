@@ -54,6 +54,31 @@ const seedData = async () => {
 
     console.log('✅ Train schedules seeded');
 
+    // Seed Schedule Dates (next 60 days for each schedule)
+    const [allSchedules] = await pool.execute('SELECT id, total_seats FROM train_schedules WHERE is_active = TRUE');
+    const today = new Date();
+    const dateValues = [];
+    const dateParams = [];
+
+    for (const sch of allSchedules) {
+      for (let i = 0; i < 60; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        const dateStr = d.toISOString().split('T')[0];
+        dateValues.push('(?, ?, ?)');
+        dateParams.push(sch.id, dateStr, sch.total_seats);
+      }
+    }
+
+    if (dateValues.length > 0) {
+      await pool.execute(
+        `INSERT IGNORE INTO schedule_dates (schedule_id, travel_date, available_seats) VALUES ${dateValues.join(', ')}`,
+        dateParams
+      );
+    }
+
+    console.log('✅ Schedule dates seeded (60 days)');
+
     // Seed Sample Bookings
     const bookingCode1 = 'RG-2024-001';
     await pool.execute(`

@@ -38,14 +38,31 @@ const createBooking = async (req, res) => {
 
     const schedule = schedules[0];
 
-    // Check seat availability
-    if (schedule.available_seats < passenger_count) {
+    // Check per-date seat availability from schedule_dates
+    const [dateSlots] = await conn.execute(
+      'SELECT * FROM schedule_dates WHERE schedule_id = ? AND travel_date = ?',
+      [schedule_id, departure_date]
+    );
+
+    let availableOnDate;
+    if (dateSlots.length === 0) {
+      // Auto-create entry for dates not yet seeded
+      await conn.execute(
+        'INSERT INTO schedule_dates (schedule_id, travel_date, available_seats) VALUES (?, ?, ?)',
+        [schedule_id, departure_date, schedule.total_seats]
+      );
+      availableOnDate = schedule.total_seats;
+    } else {
+      availableOnDate = dateSlots[0].available_seats;
+    }
+
+    if (availableOnDate < passenger_count) {
       await conn.rollback();
       return res.status(409).json({
         success: false,
-        message: 'Not enough seats available.',
+        message: 'Not enough seats available for this date.',
         error_code: 'SEAT_UNAVAILABLE',
-        available: schedule.available_seats
+        available: availableOnDate
       });
     }
 
@@ -72,10 +89,10 @@ const createBooking = async (req, res) => {
       }
     }
 
-    // Update available seats
+    // Decrement per-date available seats
     await conn.execute(
-      'UPDATE train_schedules SET available_seats = available_seats - ? WHERE id = ?',
-      [passenger_count, schedule_id]
+      'UPDATE schedule_dates SET available_seats = available_seats - ? WHERE schedule_id = ? AND travel_date = ?',
+      [passenger_count, schedule_id, departure_date]
     );
 
     // Create payment record
@@ -240,10 +257,10 @@ const cancelBooking = async (req, res) => {
       [booking.id]
     );
 
-    // Restore seats
+    // Restore per-date available seats
     await conn.execute(
-      'UPDATE train_schedules SET available_seats = available_seats + ? WHERE id = ?',
-      [booking.passenger_count, booking.schedule_id]
+      'UPDATE schedule_dates SET available_seats = available_seats + ? WHERE schedule_id = ? AND travel_date = ?',
+      [booking.passenger_count, booking.schedule_id, booking.departure_date]
     );
 
     await conn.execute(

@@ -19,6 +19,7 @@ const PaymentPage = () => {
   const [proof, setProof] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [countdown, setCountdown] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
   const timerRef = useRef(null);
   const fileRef = useRef(null);
 
@@ -75,8 +76,7 @@ const PaymentPage = () => {
         payment_method: method,
         payment_proof: proof,
       });
-      toast.success('Payment successful! Booking confirmed! 🎉');
-      navigate('/dashboard/tickets');
+      setShowSuccess(true);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Payment failed. Please try again.');
     } finally {
@@ -95,6 +95,43 @@ const PaymentPage = () => {
   }
 
   if (!booking) return null;
+
+  if (showSuccess) {
+    return (
+      <DashboardLayout>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div
+            id="payment-success-modal"
+            data-testid="payment-success-modal"
+            className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl"
+          >
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Pembayaran Berhasil!</h2>
+            <p className="text-gray-500 mb-2">Tiket Anda telah dikonfirmasi.</p>
+            <p
+              id="success-booking-code"
+              data-testid="success-booking-code"
+              className="font-mono text-blue-600 font-bold text-lg mb-6"
+            >
+              {bookingCode}
+            </p>
+            <button
+              id="btn-view-tickets"
+              data-testid="btn-view-tickets"
+              onClick={() => navigate('/dashboard/tickets')}
+              className="btn-primary w-full py-3"
+            >
+              Lihat Tiket Saya
+            </button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

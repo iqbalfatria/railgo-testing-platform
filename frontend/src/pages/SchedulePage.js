@@ -42,6 +42,7 @@ const SchedulePage = () => {
       const res = await ticketAPI.search({
         origin: filters.origin,
         destination: filters.destination,
+        date: filters.date,
         class: filters.class || undefined,
         sort: filters.sort,
       });

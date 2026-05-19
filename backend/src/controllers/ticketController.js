@@ -5,14 +5,24 @@ const getTickets = async (req, res) => {
   try {
     const { origin, destination, date, class: trainClass, sort } = req.query;
 
-    let query = `
-      SELECT 
-        ts.*,
-        (ts.available_seats > 0) AS is_available
-      FROM train_schedules ts
-      WHERE ts.is_active = TRUE
-    `;
+    let query;
     const params = [];
+
+    if (date) {
+      query = `
+        SELECT ts.*, sd.available_seats, (sd.available_seats > 0) AS is_available
+        FROM train_schedules ts
+        JOIN schedule_dates sd ON ts.id = sd.schedule_id AND sd.travel_date = ?
+        WHERE ts.is_active = TRUE
+      `;
+      params.push(date);
+    } else {
+      query = `
+        SELECT ts.*, (ts.available_seats > 0) AS is_available
+        FROM train_schedules ts
+        WHERE ts.is_active = TRUE
+      `;
+    }
 
     if (origin) {
       query += ' AND ts.origin_city = ?';
@@ -27,10 +37,8 @@ const getTickets = async (req, res) => {
       params.push(trainClass);
     }
 
-    // Sort
     if (sort === 'price_asc') query += ' ORDER BY ts.price ASC';
     else if (sort === 'price_desc') query += ' ORDER BY ts.price DESC';
-    else if (sort === 'departure') query += ' ORDER BY ts.departure_time ASC';
     else query += ' ORDER BY ts.departure_time ASC';
 
     const [schedules] = await pool.execute(query, params);
