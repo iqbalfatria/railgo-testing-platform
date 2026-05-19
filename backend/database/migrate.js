@@ -38,9 +38,9 @@ const run = async () => {
     const [applied] = await conn.execute('SELECT filename FROM _migrations');
     const appliedSet = new Set(applied.map(r => r.filename));
 
-    // Read migration files sorted by name
+    // Read migration files sorted by name (skip directories)
     const files = fs.readdirSync(MIGRATIONS_DIR)
-      .filter(f => f.endsWith('.sql'))
+      .filter(f => f.endsWith('.sql') && fs.statSync(path.join(MIGRATIONS_DIR, f)).isFile())
       .sort();
 
     if (files.length === 0) {
