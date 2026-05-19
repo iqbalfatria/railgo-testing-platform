@@ -41,7 +41,15 @@ const seedData = async () => {
       ('KOM-01', 'Komuter', 'Jakarta', 'Bogor', '06:00:00', '07:30:00', 90, 'Economy', 25000, 150, 130),
       ('KOM-02', 'Komuter', 'Jakarta', 'Bogor', '08:00:00', '09:30:00', 90, 'Economy', 25000, 150, 120),
       ('BIM-01', 'Bima', 'Surabaya', 'Jakarta', '15:00:00', '05:00:00', 840, 'Executive', 470000, 50, 20),
-      ('BIM-02', 'Bima', 'Surabaya', 'Jakarta', '07:00:00', '21:00:00', 840, 'Business', 350000, 60, 40)
+      ('BIM-02', 'Bima', 'Surabaya', 'Jakarta', '07:00:00', '21:00:00', 840, 'Business', 350000, 60, 40),
+      ('LOD-01', 'Lodaya', 'Bandung', 'Yogyakarta', '07:00:00', '14:30:00', 450, 'Business', 280000, 60, 48),
+      ('LOD-02', 'Lodaya', 'Bandung', 'Yogyakarta', '19:30:00', '03:00:00', 450, 'Economy', 175000, 80, 65),
+      ('LOD-03', 'Lodaya', 'Yogyakarta', 'Bandung', '08:00:00', '15:30:00', 450, 'Business', 280000, 60, 52),
+      ('LOD-04', 'Lodaya', 'Yogyakarta', 'Bandung', '20:00:00', '03:30:00', 450, 'Economy', 175000, 80, 70),
+      ('TRG-01', 'Turangga', 'Bandung', 'Yogyakarta', '06:00:00', '13:00:00', 420, 'Executive', 390000, 50, 30),
+      ('TRG-02', 'Turangga', 'Yogyakarta', 'Bandung', '15:00:00', '22:00:00', 420, 'Executive', 390000, 50, 25),
+      ('MLB-01', 'Malabar', 'Bandung', 'Yogyakarta', '16:00:00', '23:30:00', 450, 'Business', 260000, 60, 40),
+      ('MLB-02', 'Malabar', 'Yogyakarta', 'Bandung', '05:30:00', '13:00:00', 450, 'Business', 260000, 60, 35)
     `);
 
     console.log('✅ Train schedules seeded');
