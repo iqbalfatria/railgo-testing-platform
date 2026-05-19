@@ -60,11 +60,19 @@ const run = async () => {
 
       const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8');
 
-      // Split on semicolons, filter blanks and comment-only lines
-      const statements = sql
+      // Strip single-line comments, then split on semicolons
+      const stripped = sql
+        .split('\n')
+        .map(line => {
+          const idx = line.indexOf('--');
+          return idx >= 0 ? line.slice(0, idx) : line;
+        })
+        .join('\n');
+
+      const statements = stripped
         .split(';')
         .map(s => s.trim())
-        .filter(s => s.length > 0 && !s.startsWith('--'));
+        .filter(s => s.length > 0);
 
       for (const stmt of statements) {
         try {

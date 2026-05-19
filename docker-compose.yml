@@ -12,7 +12,6 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
-      - ./backend/database/migrations/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -38,6 +37,7 @@ services:
       JWT_SECRET: railgo_super_secret_jwt_key_2024
       FRONTEND_URL: http://localhost:3000
       NODE_ENV: production
+    command: sh -c "npm run migrate && npm start"
     ports:
       - "5001:5001"
     volumes:
