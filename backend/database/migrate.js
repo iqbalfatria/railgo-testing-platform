@@ -12,17 +12,56 @@ const IGNORABLE_ERRORS = new Set([
 
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations');
 
+// Strip single-line -- comments while respecting string literals
+function stripComments(sql) {
+  let result = '';
+  let inString = false;
+  let stringChar = '';
+  let i = 0;
+
+  while (i < sql.length) {
+    const ch = sql[i];
+
+    if (inString) {
+      result += ch;
+      // Handle escaped quote ('' or \')
+      if (ch === stringChar && sql[i + 1] === stringChar) {
+        result += sql[i + 1];
+        i += 2;
+        continue;
+      }
+      if (ch === stringChar) inString = false;
+      i++;
+    } else if ((ch === "'" || ch === '"' || ch === '`')) {
+      inString = true;
+      stringChar = ch;
+      result += ch;
+      i++;
+    } else if (ch === '-' && sql[i + 1] === '-') {
+      // Skip to end of line
+      while (i < sql.length && sql[i] !== '\n') i++;
+    } else {
+      result += ch;
+      i++;
+    }
+  }
+
+  return result;
+}
+
 const run = async () => {
-  const conn = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'railgo_db',
-    multipleStatements: false,
-  });
+  let conn;
 
   try {
+    conn = await mysql.createConnection({
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 3306,
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'railgo_db',
+      multipleStatements: false,
+    });
+
     console.log('🔗 Connected to database');
 
     // Create migrations tracking table
@@ -60,16 +99,7 @@ const run = async () => {
 
       const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8');
 
-      // Strip single-line comments, then split on semicolons
-      const stripped = sql
-        .split('\n')
-        .map(line => {
-          const idx = line.indexOf('--');
-          return idx >= 0 ? line.slice(0, idx) : line;
-        })
-        .join('\n');
-
-      const statements = stripped
+      const statements = stripComments(sql)
         .split(';')
         .map(s => s.trim())
         .filter(s => s.length > 0);
@@ -101,7 +131,7 @@ const run = async () => {
     console.error('\n❌ Migration failed:', err.message);
     process.exit(1);
   } finally {
-    await conn.end();
+    if (conn) await conn.end();
   }
 };
 
